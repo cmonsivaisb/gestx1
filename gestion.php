@@ -569,7 +569,7 @@ function confirmDelete(idgestion) {
                 <tbody id="resultadosTable">
     <?php foreach ($ultimas_gestiones as $gestion): ?>
         <tr>
-            <td><a href="update.php?id=<?= htmlspecialchars($gestion['idgestion']) ?>" class="btn btn-sm btn-primary">Editar</a></td>
+            <td><a href="editar.php?id=<?= htmlspecialchars($gestion['idgestion']) ?>" class="btn btn-sm btn-primary">Editar</a></td>
             <td><button class="btn btn-sm btn-danger" onclick="confirmDelete(<?= $gestion['idgestion'] ?>)">Eliminar</button></td>
             <td><?= htmlspecialchars($gestion['idgestion']) ?></td>
             <td><?= htmlspecialchars($gestion['nombre']) ?></td>
@@ -684,7 +684,7 @@ $(document).ready(function() {
             if (response.exists) {
                 // Alerta al usuario y muestra un enlace para editar
                 if (confirm('Ya existe una gestión con el mismo nombre. ¿Deseas editarla en su lugar?')) {
-                    window.location.href = 'update.php?id=' + response.idgestion;
+                    window.location.href = 'editar.php?id=' + response.idgestion;
                 }
             } else {
                 // Proceder con el guardado si no existe
@@ -730,7 +730,7 @@ $(document).ready(function() {
                 var resultadosHtml = '';
                 $.each(response, function(key, value) {
                     resultadosHtml += '<tr>' +
-            '<td><a href="update.php?id=' + value.idgestion + '" class="btn btn-sm btn-primary">Editar</a></td>' +
+            '<td><a href="editar.php?id=' + value.idgestion + '" class="btn btn-sm btn-primary">Editar</a></td>' +
             '<td><button class="btn btn-sm btn-danger" onclick="confirmDelete(' + value.idgestion + ')">Eliminar</button></td>' +
             '<td>' + value.idgestion + '</td>' +
             '<td>' + value.nombre + '</td>' +
