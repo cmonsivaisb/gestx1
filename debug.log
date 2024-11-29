@@ -1,0 +1,173 @@
+2024-11-27 18:38:04 - Inicio de update.php
+2024-11-27 18:38:04 - Usuario autenticado.
+2024-11-27 18:38:04 - Conectado a la base de datos.
+2024-11-27 18:38:04 - Verificando método de solicitud.
+2024-11-27 18:38:04 - Método de solicitud no permitido: GET
+2024-11-27 18:38:06 - Inicio de update.php
+2024-11-27 18:38:06 - Usuario autenticado.
+2024-11-27 18:38:06 - Conectado a la base de datos.
+2024-11-27 18:38:06 - Verificando método de solicitud.
+2024-11-27 18:38:06 - Método de solicitud no permitido: GET
+2024-11-27 18:38:31 - Inicio de update.php
+2024-11-27 18:38:31 - Usuario autenticado.
+2024-11-27 18:38:31 - Conectado a la base de datos.
+2024-11-27 18:38:31 - Verificando método de solicitud.
+2024-11-27 18:38:31 - Recibiendo datos POST.
+2024-11-27 18:38:31 - Datos recibidos: Array
+(
+    [id] => 1712
+    [tema] => 33
+    [subtema] => TESTAMENTO
+    [detalle] => SOLICITA VISITA DEL SINDICO PARA SERVIDUMBRE DE PASO123
+    [origen] => 1
+    [estadoNacimiento] => 5
+    [municipio] => 24
+    [colonia] => 1
+    [seccional] => 
+    [nombre] => JUANA MARIA GARAY FLORES
+    [calle] => 
+    [numExterior] => 
+    [celular] => 8421080877
+    [status] => 1
+)
+
+2024-11-27 18:38:31 - Validaciones pasadas. Manejar subtema.
+2024-11-27 18:38:31 - Subtema manejado correctamente: ID subtema = 94
+2024-11-27 18:38:31 - Gestión actualizada correctamente. ID = 1712
+2024-11-27 18:38:57 - Inicio de update.php
+2024-11-27 18:38:57 - Usuario autenticado.
+2024-11-27 18:38:57 - Conectado a la base de datos.
+2024-11-27 18:38:57 - Verificando método de solicitud.
+2024-11-27 18:38:57 - Recibiendo datos POST.
+2024-11-27 18:38:57 - Datos recibidos: Array
+(
+    [id] => 1712
+    [tema] => 33
+    [subtema] => TESTAMENTO
+    [detalle] => SOLICITA VISITA DEL SINDICO PARA SERVIDUMBRE DE PASO123
+    [origen] => 1
+    [estadoNacimiento] => 5
+    [municipio] => 24
+    [colonia] => 1
+    [seccional] => 3
+    [nombre] => JUANA MARIA GARAY FLORES
+    [calle] => Bernardo Reyes
+    [numExterior] => 0
+    [celular] => 8421080877
+    [status] => 1
+)
+
+2024-11-27 18:38:57 - Validaciones pasadas. Manejar subtema.
+2024-11-27 18:38:57 - Subtema manejado correctamente: ID subtema = 94
+2024-11-27 18:38:57 - Gestión actualizada correctamente. ID = 1712
+2024-11-27 18:39:30 - Inicio de update.php
+2024-11-27 18:39:30 - Usuario autenticado.
+2024-11-27 18:39:30 - Conectado a la base de datos.
+2024-11-27 18:39:30 - Verificando método de solicitud.
+2024-11-27 18:39:30 - Recibiendo datos POST.
+2024-11-27 18:39:30 - Datos recibidos: Array
+(
+    [id] => 1712
+    [tema] => 27
+    [subtema] => ARREGLO DE CAMINO
+    [detalle] => SOLICITA VISITA DEL SINDICO PARA SERVIDUMBRE DE PASO123
+    [origen] => 1
+    [estadoNacimiento] => 5
+    [municipio] => 24
+    [colonia] => 1
+    [seccional] => 3
+    [nombre] => JUANA MARIA GARAY FLORES
+    [calle] => na
+    [numExterior] => 0
+    [celular] => 8421080877
+    [status] => 1
+)
+
+2024-11-27 18:39:30 - Validaciones pasadas. Manejar subtema.
+2024-11-27 18:39:30 - Subtema manejado correctamente: ID subtema = 158
+2024-11-27 18:39:30 - Gestión actualizada correctamente. ID = 1712
+2024-11-27 18:39:50 - Inicio de update.php
+2024-11-27 18:39:50 - Usuario autenticado.
+2024-11-27 18:39:50 - Conectado a la base de datos.
+2024-11-27 18:39:50 - Verificando método de solicitud.
+2024-11-27 18:39:50 - Recibiendo datos POST.
+2024-11-27 18:39:50 - Datos recibidos: Array
+(
+    [id] => 1712
+    [tema] => 27
+    [subtema] => BOMBA DE AGUA
+    [detalle] => SOLICITA VISITA DEL SINDICO PARA SERVIDUMBRE DE PASO123
+    [origen] => 1
+    [estadoNacimiento] => 5
+    [municipio] => 24
+    [colonia] => 1
+    [seccional] => 3
+    [nombre] => JUANA MARIA GARAY FLORES
+    [calle] => na
+    [numExterior] => 33
+    [celular] => 8421080877
+    [status] => 1
+)
+
+2024-11-27 18:39:50 - Validaciones pasadas. Manejar subtema.
+2024-11-27 18:39:50 - Subtema manejado correctamente: ID subtema = 157
+2024-11-27 18:39:50 - Gestión actualizada correctamente. ID = 1712
+2024-11-28 13:55:26 - Inicio de update.php
+2024-11-28 13:55:26 - Usuario autenticado.
+2024-11-28 13:55:26 - Conectado a la base de datos.
+2024-11-28 13:55:26 - Verificando método de solicitud.
+2024-11-28 13:55:26 - Método de solicitud no permitido: GET
+2024-11-29 14:41:48 - Inicio de update.php
+2024-11-29 14:41:48 - Usuario no autenticado.
+2024-11-29 15:13:20 - Inicio de update.php
+2024-11-29 15:13:20 - Usuario autenticado.
+2024-11-29 15:13:20 - Conectado a la base de datos.
+2024-11-29 15:13:20 - Verificando método de solicitud.
+2024-11-29 15:13:20 - Recibiendo datos POST.
+2024-11-29 15:13:20 - Datos recibidos: Array
+(
+    [id] => 3234
+    [tema] => 27
+    [subtema] => SENALIZACION
+    [detalle] => ESTE ES EL DETALLE SUBTEMA 1
+    [origen] => 1
+    [estadoNacimiento] => 5
+    [municipio] => 24
+    [colonia] => 5962
+    [seccional] => 2
+    [nombre] => nuevokkllljk
+    [calle] => Bernardo Reyes
+    [numExterior] => 2
+    [celular] => 84413182523
+    [status] => 1
+)
+
+2024-11-29 15:13:20 - Validaciones pasadas. Manejar subtema.
+2024-11-29 15:13:20 - Subtema manejado correctamente: ID subtema = 69
+2024-11-29 15:13:20 - Gestión actualizada correctamente. ID = 3234
+2024-11-29 16:19:27 - Inicio de update.php
+2024-11-29 16:19:27 - Usuario autenticado.
+2024-11-29 16:19:27 - Conectado a la base de datos.
+2024-11-29 16:19:27 - Verificando método de solicitud.
+2024-11-29 16:19:27 - Recibiendo datos POST.
+2024-11-29 16:19:27 - Datos recibidos: Array
+(
+    [id] => 3258
+    [tema] => 29
+    [subtema] => LIQUIDACION
+    [detalle] => DETALLER PRFA
+    [origen] => 1
+    [estadoNacimiento] => 5
+    [municipio] => 24
+    [colonia] => 5962
+    [seccional] => 12321
+    [nombre] => JUANPRUEBANNUEV
+    [calle] => 123
+    [numExterior] => 111
+    [celular] => 88888
+    [status] => 1
+)
+
+2024-11-29 16:19:27 - Validaciones pasadas. Manejar subtema.
+2024-11-29 16:19:27 - Subtema manejado correctamente: ID subtema = 79
+2024-11-29 16:19:27 - Gestión actualizada correctamente. ID = 3258

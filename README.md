@@ -1,2 +1,0 @@
-# gestx1
-gestordegestion

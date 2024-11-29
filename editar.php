@@ -43,12 +43,6 @@ if (!$gestion) {
     die('Gestión no encontrada.');
 }
 
-$stmt->execute([$id]);
-$gestion = $stmt->fetch(PDO::FETCH_ASSOC);
-
-if (!$gestion) {  
-    die('Gestión no encontrada.');
-}
 
 // Recuperar las listas desplegables necesarias (temas, estados, municipios, colonias)
 $temas = $pdo->query("SELECT id, nombre_tema FROM temas WHERE id > 26")->fetchAll(PDO::FETCH_ASSOC);
@@ -355,7 +349,8 @@ $(document).ready(function () {
     const temaSelect = document.getElementById('tema');
     const subtemaInput = document.getElementById('subtema');
     const estatusSelect = $('#status');
-    const textareasubt = document.getElementById('labelsub');
+    
+    const textareasubtlbl = document.getElementById('labelsub');
 
     function cargarSubtemas() {
         if (!temaSelect) {
@@ -369,6 +364,7 @@ $(document).ready(function () {
             textareasubt.value = subtemas.join("\n");
         } else {
             textareasubt.style.display = "none";
+            textareasubtlbl.style.display = "none";
             textareasubt.value = "";
         }
     }
@@ -395,7 +391,7 @@ $(document).ready(function () {
 
             // Ocultar el textarea después de seleccionar
             textareasubt.style.display = 'none';
-           labelsub.style.display = 'none';
+            textareasubtlbl.style.display = 'none';
         }
     });
 
