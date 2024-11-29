@@ -30,7 +30,19 @@ if (isset($_GET['id'])) {
 }
 
 // Recuperar los datos actuales de la gestión desde la base de datos
-$stmt = $pdo->prepare("SELECT * FROM gestiones WHERE id = ?");
+$stmt = $pdo->prepare("
+    SELECT g.*, s.nombre_subtema 
+    FROM gestiones g
+    LEFT JOIN subtemas s ON g.id_subtema = s.id
+    WHERE g.id = ?
+");
+$stmt->execute([$id]);
+$gestion = $stmt->fetch(PDO::FETCH_ASSOC);
+
+if (!$gestion) {  
+    die('Gestión no encontrada.');
+}
+
 $stmt->execute([$id]);
 $gestion = $stmt->fetch(PDO::FETCH_ASSOC);
 
@@ -155,10 +167,10 @@ function obtenerOCrearSubtema($nombre_subtema, $pdo) {
                 <label for="subtema" class="form-label">
                     Subtema
                     <span class="badge bg-info text-dark ms-2">
-                        Actual: <?= htmlspecialchars($gestion['subtema'] ?? 'No asignado', ENT_QUOTES, 'UTF-8') ?>
+                        Actual: <?= htmlspecialchars($gestion['nombre_subtema'] ?? 'No asignado', ENT_QUOTES, 'UTF-8') ?>
                     </span>
                 </label>
-                <input type="text" id="subtema" name="subtema" class="form-control" placeholder="Escribe un nuevo subtema" value="<?= htmlspecialchars($gestion['subtema'] ?? '', ENT_QUOTES, 'UTF-8') ?>" required>
+                <input type="text" id="subtema" name="subtema" class="form-control" placeholder="Escribe un nuevo subtema" value="<?= htmlspecialchars($gestion['nombre_subtema'] ?? '', ENT_QUOTES, 'UTF-8') ?>" required>
             </div>
 
             <!-- Sugerencias Subtema -->
@@ -242,7 +254,7 @@ function obtenerOCrearSubtema($nombre_subtema, $pdo) {
                 <label for="seccional" class="form-label">
                     Seccional
                     <span class="badge bg-info text-dark ms-2">
-                        Actual: <?= htmlspecialchars($gestion['seccional'] ?? 'No asignado', ENT_QUOTES, 'UTF-8') ?>
+                        Actual: <?= ($gestion['seccional'] ?? 'No asignado') ?>
                     </span>
                 </label>
                 <input type="text" id="seccional" name="seccional" class="form-control" value="<?= htmlspecialchars($gestion['seccional'] ?? '', ENT_QUOTES, 'UTF-8') ?>">

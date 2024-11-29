@@ -177,7 +177,7 @@ if (isset($_POST['action']) && $_POST['action'] == 'guardar') {
     $celular = trim($_POST['celular'] ?? '');
     $id_usuario = $_SESSION['usuario_id'];
     $id_tema = $_POST['tema'] ?? 1;
-    $estatus = $_POST['status'] ?? 1;
+    $status = $_POST['status'] ?? 1;
     $fecha = $_POST['fecha'] ?? date('Y-m-d H:i:s');
     $subtema = trim($_POST['subtema'] ?? '');
     $responsable_name = trim($_POST['responsable'] ?? '');
@@ -198,18 +198,37 @@ if (isset($_POST['action']) && $_POST['action'] == 'guardar') {
         exit();
     }
 
-    // Insertar en la base de datos
-    try {
-        $stmt = $pdo->prepare("INSERT INTO gestiones (id_tema, id_subtema, detalle, origen, id_estado, id_municipio, id_colonia, 
-                               num_exterior, celular, seccional, id_usuario, estatus, nombre, calle, id_responsable, fecha) 
-                               VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)");
-        $stmt->execute([$id_tema, $id_subtema, $detalle, $origen, $id_estado, $id_municipio, $id_colonia, $num_exterior, 
-                        $celular, $seccional, $id_usuario, $estatus, $nombre, $calle, $id_responsable, $fecha]);
-        echo json_encode(['success' => true]);
-    } catch (PDOException $e) {
-        echo json_encode(['success' => false, 'error' => 'Error al guardar la gestión: ' . $e->getMessage()]);
-    }
-    exit();
+
+
+
+// Llamar a las funciones para obtener o crear IDs
+$id_subtema = obtenerOCrearSubtema($subtema, $pdo);
+$id_responsable = obtenerOCrearResponsable($responsable_name, $pdo);
+
+try {
+    // Preparar la consulta de inserción
+    $stmt = $pdo->prepare("INSERT INTO gestiones (id_tema, id_subtema, detalle, origen, id_estado, id_municipio, id_colonia, num_exterior, celular, seccional, id_usuario, estatus, nombre, calle, id_responsable) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)");
+    $stmt->execute([$id_tema, $id_subtema, $detalle, $origen, $id_estado, $id_municipio, $id_colonia, $num_exterior, $celular, $seccional, $id_usuario, $status, $nombre, $calle, $id_responsable]);
+
+    // Obtener el ID de la gestión recién insertada
+    $id_gestion = $pdo->lastInsertId();
+
+    // Responder con un JSON que incluye el ID y un mensaje
+
+} catch (Exception $e) {
+    // Manejo de errores
+    echo json_encode([
+        'success' => false,
+        'error' => 'Error al guardar la gestión: ' . $e->getMessage()
+    ]);
+}
+
+
+
+
+    
+
+    
 }
 
 
@@ -398,6 +417,41 @@ function confirmDelete(idgestion) {
             margin-left: 240px;
             padding: 20px;
         }
+        .modal {
+            display: none;
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background: rgba(0, 0, 0, 0.5);
+            justify-content: center;
+            align-items: center;
+            z-index: 1000;
+        }
+
+        .modal-content {
+            background: white;
+            padding: 20px;
+            border-radius: 8px;
+            text-align: center;
+            max-width: 400px;
+            box-shadow: 0 4px 10px rgba(0, 0, 0, 0.2);
+        }
+
+        .modal-content button {
+            margin-top: 10px;
+            padding: 8px 16px;
+            border: none;
+            border-radius: 4px;
+            background-color: #4CAF50;
+            color: white;
+            cursor: pointer;
+        }
+
+        .modal-content button:hover {
+            background-color: #45a049;
+        }
     </style>
 </head>
 <body>
@@ -415,7 +469,13 @@ function confirmDelete(idgestion) {
     </ul>
     <a href="logout.php">CERRAR SESION</a>
 </div>
-<div class="content">
+<div class="content"> <!-- Modal -->
+    <div class="modal" id="modal">
+        <div class="modal-content" id="modal-content">
+            <p id="modal-message"></p>
+            <button onclick="closeModal()">Cerrar</button>
+        </div>
+    </div>
 <div class="card mt-5">
     <div class="card-body">
         <h5 class="card-title">Generar gestiones</h5>
@@ -526,8 +586,9 @@ function confirmDelete(idgestion) {
             </div>
 
             <div class="text-end">
-                <button type="button" id="guardarBtn" class="btn btn-primary">Guardar Gestión</button>
-            </div>
+            <button type="button" id="verificarBtn" class="btn btn-primary">Verificar</button>
+        <button type="button" id="guardarBtn" class="btn btn-success">Guardar</button>
+                </div>
         </form>
     </div>
 </div>
@@ -598,12 +659,15 @@ function confirmDelete(idgestion) {
 
 <script src="https://code.jquery.com/jquery-3.6.0.min.js"></script>
 <script>
-$(document).ready(function() {
+
+
+$(document).ready(function () {
     const textareasubt = document.getElementById('sugerenciasubtema');
     const temaSelect = document.getElementById('tema');
     const labelsubtemasugerencia = document.getElementById('labelsubtemasugerencia');
-    // Change event for the Tema select
-    $(temaSelect).change(function() {
+
+    // Cambiar subtemas dinámicamente según el tema seleccionado
+    $(temaSelect).change(function () {
         const subtemasPorTema = {
             "19": ["ESTUDIO MEDICO", "APARATOS DE MOVILIDAD", "ESPECIALISTA", "MEDICAMENTO", "LENTES"],
             "21": ["APOYO ECONOMICO", "APOYO ALIMENTARIO", "UTILES ESCOLARES", "TRASLADO", "APOYOS FUNERARIOS", "ATENCION CIUDADANA"],
@@ -637,7 +701,7 @@ $(document).ready(function() {
         }
     });
 
-    // Click event for the textarea suggestions
+    // Seleccionar subtema desde el área de sugerencias
     textareasubt.addEventListener('click', (event) => {
         const lines = textareasubt.value.split("\n");
         const lineHeight = parseInt(window.getComputedStyle(textareasubt).lineHeight);
@@ -650,111 +714,100 @@ $(document).ready(function() {
         }
     });
 
-    // Save button click event
-    $('#guardarBtn').on('click', function () {
-    var formData = $('#gestionForm').serializeArray();
-    var formValues = {};
-
-    // Procesar datos del formulario
-    formData.forEach(function (item) {
-        formValues[item.name] = item.value.trim(); // Eliminar espacios en blanco y tabuladores
-    });
-
-    // Validar campos vacíos o importantes
-    if (!formValues['nombre'] || formValues['nombre'].length < 3) {
-        alert('El nombre es obligatorio y debe tener al menos 3 caracteres.');
-        return;
-    }
-
-    if (!formValues['calle'] || !formValues['numExterior']) {
-        alert('La calle y el número exterior son obligatorios.');
-        return;
-    }
-
-    // Validar si existe una gestión con el mismo nombre
-    $.ajax({
-        type: 'POST',
-        url: 'gestion.php',
-        data: {
-            action: 'verificar',
-            nombre: formValues['nombre']
-        },
-        dataType: 'json',
-        success: function (response) {
-            if (response.exists) {
-                // Alerta al usuario y muestra un enlace para editar
-                if (confirm('Ya existe una gestión con el mismo nombre. ¿Deseas editarla en su lugar?')) {
-                    window.location.href = 'editar.php?id=' + response.idgestion;
-                }
-            } else {
-                // Proceder con el guardado si no existe
-                formValues['action'] = 'guardar';
-                $.ajax({
-                    type: 'POST',
-                    url: 'gestion.php',
-                    data: formValues,
-                    dataType: 'json',
-                    success: function (saveResponse) {
-                        if (saveResponse.success) {
-                            alert('Gestión registrada correctamente.');
-                            window.location.href = 'gestion.php';
-                        } else {
-                            alert('Error al guardar la gestión: ' + saveResponse.error);
-                        }
-                    },
-                    error: function () {
-                        alert('Error inesperado al guardar la gestión.');
-                    }
-                });
-            }
-        },
-        error: function () {
-            alert('Error al verificar la existencia de la gestión.');
+ 
+    $('#verificarBtn').click(function () {
+        const nombre = $('#nombre').val();
+        if (!nombre) {
+            alert('El campo "nombre" es obligatorio.');
+            return;
         }
+
+        $.ajax({
+            type: 'POST',
+            url: 'verificar.php',
+            data: { nombre },
+            dataType: 'json',
+            success: function (response) {
+                if (response.exists) {
+                    alert(`El registro ya existe con el ID: ${response.idgestion}`);
+                } else {
+                    alert('No se encontró ningún registro con este nombre.');
+                }
+            },
+            error: function () {
+                alert('Ocurrió un error al verificar.');
+            }
+        });
     });
-});
+
+    // Botón para guardar
+    $('#guardarBtn').click(function () {
+        const formData = $('#gestionForm').serialize();
+        $.ajax({
+            type: 'POST',
+            url: 'guardar.php',
+            data: formData,
+            dataType: 'json',
+            success: function (response) {
+                if (response.success) {
+                    alert(response.message);
+                    window.location.replace("https://gestiones.parras.gob.mx/2024/gestion.php");
 
 
-
-    // Search button click event
-    $('#buscarBtn').on('click', function() {
-        var formData = $('#filtroForm').serialize();
-        formData += '&action=buscar';
+                } else {
+                    alert(`Error: ${response.error}`);
+                }
+            },
+            error: function () {
+                alert('Ocurrió un error al guardar.');
+            }
+        });
+    });
+    // Buscar gestiones
+    $('#buscarBtn').on('click', function () {
+        const formData = $('#filtroForm').serialize();
+        const fullData = formData + '&action=buscar';
 
         $.ajax({
             type: 'POST',
             url: 'gestion.php',
-            data: formData,
+            data: fullData,
             dataType: 'json',
-            success: function(response) {
-                var resultadosHtml = '';
-                $.each(response, function(key, value) {
-                    resultadosHtml += '<tr>' +
-            '<td><a href="editar.php?id=' + value.idgestion + '" class="btn btn-sm btn-primary">Editar</a></td>' +
-            '<td><button class="btn btn-sm btn-danger" onclick="confirmDelete(' + value.idgestion + ')">Eliminar</button></td>' +
-            '<td>' + value.idgestion + '</td>' +
-            '<td>' + value.nombre + '</td>' +
-            '<td>' + value.fecha + '</td>' +
-            '<td>' + value.nombre_tema + '</td>' +
-            '<td>' + value.nombre_subtema + '</td>' +
-            '<td>' + value.nombre_responsable + '</td>' +
-            '<td>' + value.origen + '</td>' +
-            '<td>' + value.nombre_estado + '</td>' +
-            '<td>' + value.nombre_municipio + '</td>' +
-            '<td>' + value.nombre_colonia + '</td>' +
-            '<td>' + value.seccional + '</td>' +
-            '<td>' + value.calle + '</td>' +
-            '<td>' + value.num_exterior + '</td>' +
-            '<td>' + value.celular + '</td>' +
-            '<td>' + value.estatus + '</td>' +
-            '<td>' + value.detalle + '</td>' +
-        '</tr>';
-    });
-    $('#resultadosTable').html(resultadosHtml);
+            success: function (response) {
+                let resultadosHtml = '';
+                response.forEach(value => {
+                    resultadosHtml += `
+                        <tr>
+                            <td><a href="editar.php?id=${value.idgestion}" class="btn btn-sm btn-primary">Editar</a></td>
+                            <td><button class="btn btn-sm btn-danger" onclick="confirmDelete(${value.idgestion})">Eliminar</button></td>
+                            <td>${value.idgestion}</td>
+                            <td>${value.nombre}</td>
+                            <td>${value.fecha}</td>
+                            <td>${value.nombre_tema}</td>
+                            <td>${value.nombre_subtema}</td>
+                            <td>${value.nombre_responsable}</td>
+                            <td>${value.origen}</td>
+                            <td>${value.nombre_estado}</td>
+                            <td>${value.nombre_municipio}</td>
+                            <td>${value.nombre_colonia}</td>
+                            <td>${value.seccional}</td>
+                            <td>${value.calle}</td>
+                            <td>${value.num_exterior}</td>
+                            <td>${value.celular}</td>
+                            <td>${value.estatus}</td>
+                            <td>${value.detalle}</td>
+                        </tr>`;
+                });
+                $('#resultadosTable').html(resultadosHtml);
+            },
+            error: function (xhr, status, error) {
+                console.error('Error en buscar:', xhr.responseText);
+                alert('Error al buscar las gestiones.');
             }
         });
     });
 });
+
 </script>
 </body>
 </html>
