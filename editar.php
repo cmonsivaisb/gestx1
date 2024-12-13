@@ -31,9 +31,10 @@ if (isset($_GET['id'])) {
 
 // Recuperar los datos actuales de la gestión desde la base de datos
 $stmt = $pdo->prepare("
-    SELECT g.*, s.nombre_subtema 
+    SELECT g.*, s.nombre_subtema , r.nombre_responsable as responsable
     FROM gestiones g
     LEFT JOIN subtemas s ON g.id_subtema = s.id
+    LEFT JOIN responsables  r ON g.id_responsable = r.id_responsable
     WHERE g.id = ?
 ");
 $stmt->execute([$id]);
@@ -45,7 +46,7 @@ if (!$gestion) {
 
 
 // Recuperar las listas desplegables necesarias (temas, estados, municipios, colonias)
-$temas = $pdo->query("SELECT id, nombre_tema FROM temas WHERE id > 26")->fetchAll(PDO::FETCH_ASSOC);
+$temas = $pdo->query("SELECT id, nombre_tema FROM temas WHERE id > 16")->fetchAll(PDO::FETCH_ASSOC);
 $estados = $pdo->query("SELECT id, nombre_estado FROM estados")->fetchAll(PDO::FETCH_ASSOC);
 $municipios = $pdo->query("SELECT id, nombre_municipio FROM municipios")->fetchAll(PDO::FETCH_ASSOC);
 $colonias = $pdo->query("SELECT id, nombre_colonia FROM colonias")->fetchAll(PDO::FETCH_ASSOC);
@@ -91,6 +92,13 @@ function obtenerOCrearSubtema($nombre_subtema, $pdo) {
     <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0-alpha1/dist/css/bootstrap.min.css">
     <!-- jQuery -->
     <script src="https://code.jquery.com/jquery-3.6.0.min.js"></script>
+
+
+    <script >
+
+
+
+    </script>
     <style>
         body {
             font-family: 'Poppins', sans-serif;
@@ -156,22 +164,32 @@ function obtenerOCrearSubtema($nombre_subtema, $pdo) {
                 </select>
             </div>
 
+            
             <!-- Campo Subtema -->
-            <div class="mb-3">
-                <label for="subtema" class="form-label">
-                    Subtema
-                    <span class="badge bg-info text-dark ms-2">
-                        Actual: <?= htmlspecialchars($gestion['nombre_subtema'] ?? 'No asignado', ENT_QUOTES, 'UTF-8') ?>
-                    </span>
-                </label>
-                <input type="text" id="subtema" name="subtema" class="form-control" placeholder="Escribe un nuevo subtema" value="<?= htmlspecialchars($gestion['nombre_subtema'] ?? '', ENT_QUOTES, 'UTF-8') ?>" required>
-            </div>
+            <div class="row mb-3">
+                <label for="subtema" class="form-label">Subtema:</label>
+                <select id="subtema" name="subtema" class="form-select">
+                                     
+                                       <option value="<?= htmlspecialchars($id, ENT_QUOTES, 'UTF-8') ?>" >  <?= htmlspecialchars($gestion['nombre_subtema'], ENT_QUOTES, 'UTF-8') ?> </option>
 
-            <!-- Sugerencias Subtema -->
-            <div class="mb-3">
-                <label id="labelsub"  for="sugerenciasubtema" class="form-label">Sugerencias Subtema</label>
-                <textarea rows="4" cols="50" class="form-control" id="sugerenciasubtema" name="sugerenciasubtema" readonly></textarea>
+                </select>
+                <div class="mt-2">
+                    <input type="text" id="nuevoSubtema" class="form-control" placeholder="Escribe un nuevo subtema">
+                    <button type="button" id="agregarSubtema" class="btn btn-success mt-2">Crear Nuevo Subtema</button>
+                </div>
             </div>
+            <div class="mb-3">
+    <label for="responsable">Responsable:</label>
+    <input 
+        type="text" 
+        class="form-control" 
+        id="responsable" 
+        name="responsable" 
+        value="<?= htmlspecialchars($gestion['responsable'] ?? '', ENT_QUOTES, 'UTF-8') ?>" 
+      
+    >
+</div>
+
 
             <!-- Campo Detalle -->
             <div class="mb-3">
@@ -321,154 +339,120 @@ function obtenerOCrearSubtema($nombre_subtema, $pdo) {
 </div>
 
 <script>
+
+ 
 $(document).ready(function () {
-    const subtemasPorTema = {
-        "19": ["ESTUDIO MEDICO", "APARATOS DE MOVILIDAD", "ESPECIALISTA", "MEDICAMENTO", "LENTES"],
-        "21": ["APOYO ECONOMICO", "APOYO ALIMENTARIO", "UTILES ESCOLARES", "TRASLADO", "APOYOS FUNERARIOS", "ATENCION CIUDADANA"],
-        "22": ["REDUCTORES DE VELOCIDAD", "BORDOS", "SEÑALIZACION", "CONCESIONES"],
-        "23": ["LUMINARIA", "RECOLECCION DE BASURA", "PLAZAS Y JARDINES", "LIMPIEZA", "PIPA DE AGUA"],
-        "24": ["CONTROL ANIMAL", "ESTERILIZACIONES"],
-        "25": ["BACHES", "PAVIMENTACION", "MATERIAL PARA CONSTRUCCION"],
-        "27": ["BOMBA DE AGUA", "ARREGLO DE CAMINO"],
-        "28": ["PLACAS", "REGISTRO CIVIL", "ESCRITURACION", "PODER JUDICIAL", "EMPODERAMIENTO DE LA MUJER", "TESTAMENTO"],
-        "29": ["EMPLEO TEMPORAL", "LIQUIDACION", "PENSION", "EMPLEO"],
-        "30": ["RONDINES", "APOYO VIAL"],
-        "31": ["FALTA DE AGUA", "POCA PRESION DE AGUA", "CONTRATO", "DRENAJE", "CONVENIO"],
-        "32": ["MATERIAL DEPORTIVO", "PRESTAMO UNIDAD DEPORTIVA", "PREMIACIONES"],
-        "33": ["ASESORIA LEGAL", "TESTAMENTO", "DIVORCIO"],
-        "34": ["AMBULANCIA"],
-        "35": ["MEDICAMENTO", "CONSULTA"],
-        "37": ["APOYO PSICOLOGICO", "ASESORIA"],
-        "39": ["ASESORIA LEGAL"],
-        "40": ["BANDA MUNICIPAL", "ESPACIO CULTURAL"],
-        "41": ["ARREGLO FLORAL", "APOYO SONIDO", "APOYO MOBILIARIO"],
-        "46": ["TECHO", "PISO", "CUARTO", "BAÑO", "TINACO", "LAMINAS", "PAVIMENTACION", "DRENAJE"]
-    };
+    const temaSelect = $('#tema');
+    const subtemaSelect = $('#subtema');
+    const nuevoSubtemaInput = $('#nuevoSubtema');
+    const agregarSubtemaBtn = $('#agregarSubtema');
 
-    const textareasubt = document.getElementById('sugerenciasubtema');
-    const temaSelect = document.getElementById('tema');
-    const subtemaInput = document.getElementById('subtema');
-    const estatusSelect = $('#status');
-    
-    const textareasubtlbl = document.getElementById('labelsub');
-
-    function cargarSubtemas() {
-        if (!temaSelect) {
-            console.warn("#tema select not found.");
-            return;
-        }
-
-        const subtemas = subtemasPorTema[temaSelect.value] || [];
-        if (subtemas.length > 0) {
-            textareasubt.style.display = "block";
-            textareasubt.value = subtemas.join("\n");
-        } else {
-            textareasubt.style.display = "none";
-            textareasubtlbl.style.display = "none";
-            textareasubt.value = "";
-        }
+    // Deshabilitar el campo para nuevo subtema si ya hay un subtema asignado
+    if ('<?= htmlspecialchars($gestion['nombre_subtema'] ?? '', ENT_QUOTES, 'UTF-8') ?>') {
+        nuevoSubtemaInput.prop('disabled', true);
+        agregarSubtemaBtn.prop('disabled', true);
     }
 
-    // Evento de cambio en el select de tema
-    $(temaSelect).on('change', function () {
-        cargarSubtemas();
-    });
+    // Cargar subtemas desde la base de datos al cambiar el tema
+    temaSelect.on('change', function () {
+        const temaId = $(this).val();
+        subtemaSelect.empty().append('<option value="">Cargando...</option>');
 
-    // Inicializar sugerencias al cargar la página
-    cargarSubtemas();
+        $.ajax({
+            type: 'GET',
+            url: 'get_subtemas.php',
+            data: { id_tema: temaId },
+            dataType: 'json',
+            success: function (response) {
+                subtemaSelect.empty().append('<option value="">Selecciona un subtema</option>');
+                response.forEach(function (subtema) {
+                    subtemaSelect.append(`<option value="${subtema.nombre}">${subtema.nombre}</option>`);
+                });
 
-    // Selección de un subtema desde las sugerencias
-    textareasubt.addEventListener('click', (event) => {
-        const lines = textareasubt.value.split("\n");
-        const lineHeight = parseInt(window.getComputedStyle(textareasubt).lineHeight, 10) || 20; // Fallback
-        const clickedLine = Math.floor(event.offsetY / lineHeight);
-
-        if (lines[clickedLine]) {
-            subtemaInput.value = lines[clickedLine];
-
-            // Limpiar el textarea después de seleccionar un subtema
-            textareasubt.value = '';
-
-            // Ocultar el textarea después de seleccionar
-            textareasubt.style.display = 'none';
-            textareasubtlbl.style.display = 'none';
-        }
-    });
-
-    $('#guardarBtn').on('click', function () {
-        // Serialize form data
-        let formData = $('#editarForm').serializeArray();
-        let formValues = {};
-
-        // Convertir el array en un objeto clave-valor
-        formData.forEach(function (item) {
-            formValues[item.name] = item.value;
-        });
-
-        let isValid = true;
-
-        // Limpiar estados previos de validación
-        $('.form-select, .form-control').removeClass('is-invalid');
-
-        // Validar Tema
-        if (!temaSelect.value) {
-            $(temaSelect).addClass('is-invalid');
-            isValid = false;
-        }
-
-        // Validar Subtema
-        if (!subtemaInput.value.trim()) {
-            $(subtemaInput).addClass('is-invalid');
-            isValid = false;
-        }
-
-        // Validar Estatus
-        if (!estatusSelect.val()) {
-            $(estatusSelect).addClass('is-invalid');
-            isValid = false;
-        }
-
-        if (!isValid) {
-            alert("Por favor, completa los campos obligatorios.");
-            return;
-        }
-
-        // Validaciones adicionales (opcional)
-        if (!formValues.subtema || formValues.subtema.trim() === "") {
-            alert("Por favor, ingresa un subtema válido.");
-            return;
-        }
-
-        // Excluir campos no deseados
-        var camposNoDeseados = ['sugerenciasubtema'];
-        var datosEnviar = {};
-        formData.forEach(function (item) {
-            if (!camposNoDeseados.includes(item.name)) {
-                datosEnviar[item.name] = item.value;
+                // Agregar la opción "Otro"
+                subtemaSelect.append('<option value="otro">Otro seleccione para poder agregar nuevo subtema</option>');
+            },
+            error: function () {
+                alert('Error al cargar los subtemas.');
             }
         });
+    });
 
-        // Enviar datos vía AJAX
+    // Habilitar el campo para nuevo subtema al seleccionar "Otro"
+    subtemaSelect.on('change', function () {
+        if ($(this).val() === 'otro') {
+            nuevoSubtemaInput.prop('disabled', false).focus();
+            agregarSubtemaBtn.prop('disabled', false);
+        } else {
+            nuevoSubtemaInput.prop('disabled', true).val('');
+            agregarSubtemaBtn.prop('disabled', true);
+        }
+    });
+
+    // Agregar un nuevo subtema
+    agregarSubtemaBtn.on('click', function () {
+        const nuevoSubtema = nuevoSubtemaInput.val().trim();
+        if (!nuevoSubtema) {
+            alert('Por favor, escribe un subtema.');
+            return;
+        }
+
         $.ajax({
             type: 'POST',
-            url: 'update.php', // Asegúrate de que esta ruta es correcta
-            data: datosEnviar,
+            url: 'create_subtema.php',
+            data: { nombre_subtema: nuevoSubtema },
             dataType: 'json',
             success: function (response) {
                 if (response.success) {
-                    alert('Registro actualizado correctamente.');
-                    window.location.href = 'gestion.php'; // Redirige
-                } else if (response.error) {
-                    alert(response.error);
+                    subtemaSelect.append(`<option value="${nuevoSubtema}" selected>${nuevoSubtema}</option>`);
+                    nuevoSubtemaInput.val('');
+                    nuevoSubtemaInput.prop('disabled', true);
+                    agregarSubtemaBtn.prop('disabled', true);
+                    alert('Subtema creado exitosamente.');
+                } else {
+                    alert('Error: ' + response.error);
                 }
             },
-            error: function (xhr, status, error) {
-                console.error('Error en la respuesta:', xhr.responseText);
-                alert('Ocurrió un error inesperado. Revisa la consola para más detalles.');
+            error: function () {
+                alert('Error al crear el subtema.');
+            }
+        });
+    });
+
+    // Guardar cambios en la gestión
+    $('#guardarBtn').on('click', function () {
+        const formData = $('#editarForm').serializeArray();
+        let subtemaSeleccionado = subtemaSelect.val();
+
+        if (!subtemaSeleccionado) {
+            alert('Por favor, selecciona o crea un subtema.');
+            return;
+        }
+
+        // Agregar el ID del subtema seleccionado al formulario
+        formData.push({ name: 'id_subtema', value: subtemaSeleccionado });
+
+        $.ajax({
+            type: 'POST',
+            url: 'update.php',
+            data: formData,
+            dataType: 'json',
+            success: function (response) {
+                if (response.success) {
+                    alert('Gestión actualizada correctamente.');
+                    window.location.href = 'gestion.php';
+                } else {
+                    alert('Error: ' + response.error);
+                }
+            },
+            error: function () {
+                alert('Error al guardar la gestión.');
             }
         });
     });
 });
+
+        
 </script>
 </body>
 </html>

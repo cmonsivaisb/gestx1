@@ -19,6 +19,21 @@ try {
     die("Database connection error: " . $e->getMessage());
 }
 
+if (isset($_POST['action'])) {
+    if ($_POST['action'] === 'obtener_subtemas') {
+        $temaId = $_POST['temaId'] ?? null;
+
+        if ($temaId) {
+            $stmt = $pdo->prepare("SELECT id, nombre_subtema FROM subtemas WHERE id_tema = ?");
+            $stmt->execute([$temaId]);
+            $subtemas = $stmt->fetchAll(PDO::FETCH_ASSOC);
+            echo json_encode($subtemas);
+        } else {
+            echo json_encode([]);
+        }
+        exit();
+    }
+}
 
 if (isset($_POST['action']) && $_POST['action'] == 'verificar') {
     $nombre = trim($_POST['nombre'] ?? '');
@@ -490,14 +505,16 @@ function confirmDelete(idgestion) {
                 </select>
 
                 <div class="col-md-4">
-                    <label for="subtema" class="form-label">Subtema</label>
-                    <input type="text" class="form-control" id="subtema" name="subtema" placeholder="Subtema" placeholder="subtema" >
-                </div>
-                <div class="col-md-4">
-                    <label for="sugerenciasubtema" class="form-label" id="labelsubtemasugerencia">Sugerencias Subtema</label>
-                    <textarea rows="4" cols="50" class="form-control" id="sugerenciasubtema" name="sugerenciasubtema" readonly></textarea>
-                </div>
-
+    <label for="subtema" class="form-label">Subtema</label>
+    <select id="subtema" name="subtema" class="form-select">
+        <option value="">Selecciona un subtema</option>
+        <!-- Las opciones se cargan dinámicamente con JavaScript -->
+    </select>
+</div>
+<div class="col-md-4" id="nuevoSubtemaContainer" style="display: none;">
+    <label for="nuevoSubtema" class="form-label">Nuevo Subtema</label>
+    <input type="text" class="form-control" id="nuevoSubtema" name="nuevoSubtema" placeholder="Escribe el subtema">
+</div>
                 <div class="col-md-4">
                     <label for="origen" class="form-label">Origen</label>
                     <select class="form-select" id="origen" name="origen">
@@ -662,58 +679,45 @@ function confirmDelete(idgestion) {
 
 
 $(document).ready(function () {
-    const textareasubt = document.getElementById('sugerenciasubtema');
-    const temaSelect = document.getElementById('tema');
-    const labelsubtemasugerencia = document.getElementById('labelsubtemasugerencia');
-
-    // Cambiar subtemas dinámicamente según el tema seleccionado
-    $(temaSelect).change(function () {
-        const subtemasPorTema = {
-            "19": ["ESTUDIO MEDICO", "APARATOS DE MOVILIDAD", "ESPECIALISTA", "MEDICAMENTO", "LENTES"],
-            "21": ["APOYO ECONOMICO", "APOYO ALIMENTARIO", "UTILES ESCOLARES", "TRASLADO", "APOYOS FUNERARIOS", "ATENCION CIUDADANA"],
-            "22": ["REDUCTORES DE VELOCIDAD", "BORDOS", "SEÑALIZACION", "CONCESIONES"],
-            "23": ["LUMINARIA", "RECOLECCION DE BASURA", "PLAZAS Y JARDINES", "LIMPIEZA", "PIPA DE AGUA"],
-            "24": ["CONTROL ANIMAL", "ESTERILIZACIONES"],
-            "25": ["BACHES", "PAVIMENTACION", "MATERIAL PARA CONSTRUCCION"],
-            "27": ["BOMBA DE AGUA", "ARREGLO DE CAMINO"],
-            "28": ["PLACAS", "REGISTRO CIVIL", "ESCRITURACION", "PODER JUDICIAL", "EMPOODERAMIENTO DE LA MUJER", "TESTAMENTO"],
-            "29": ["EMPLEO TEMPORAL", "LIQUIDACION", "PENSION", "EMPLEO"],
-            "30": ["RONDINES", "APOYO VIAL"],
-            "31": ["FALTA DE AGUA", "POCA PRESION DE AGUA", "CONTRATO", "DRENAJE", "CONVENIO"],
-            "32": ["MATERIAL DEPORTIVO", "PRESTAMO UNIDAD DEPORTIVA", "PREMIACIONES"],
-            "33": ["ASESORIA LEGAL", "TESTAMENTO", "DIVORCIO"],
-            "34": ["AMBULANCIA"],
-            "35": ["MEDICAMENTO", "CONSULTA"],
-            "37": ["APOYO PSICOLOGICO", "ASESORIA"],
-            "39": ["ASESORIA LEGAL"],
-            "40": ["BANDA MUNICIPAL", "ESPACIO CULTURAL"],
-            "41": ["ARREGLO FLORAL", "APOYO SONIDO", "APOYO MOBILIARIO"],
-            "46": ["TECHO", "PISO", "CUARTO", "BAÑO", "TINACO", "LAMINAS", "PAVIMENTACION", "DRENAJE"]
-        };
-
-        const subtemas = subtemasPorTema[temaSelect.value] || [];
-        if (subtemas.length > 0) {
-            textareasubt.style.display = "block";
-            textareasubt.value = subtemas.join("\n");
-        } else {
-            textareasubt.style.display = "none";
-            textareasubt.value = "";
-        }
-    });
-
+   
     // Seleccionar subtema desde el área de sugerencias
-    textareasubt.addEventListener('click', (event) => {
-        const lines = textareasubt.value.split("\n");
-        const lineHeight = parseInt(window.getComputedStyle(textareasubt).lineHeight);
-        const clickedLine = Math.floor(event.offsetY / lineHeight);
+   
+    function cargarSubtemas(temaId) {
+        $.ajax({
+            type: 'POST',
+            url: 'gestion.php', // Ruta al servidor para obtener los subtemas
+            data: { action: 'obtener_subtemas', temaId: temaId },
+            dataType: 'json',
+            success: function (response) {
+                const subtemaSelect = $('#subtema');
+                subtemaSelect.empty();
+                subtemaSelect.append('<option value="">Selecciona un subtema</option>');
+                response.forEach(subtema => {
+                    subtemaSelect.append(`<option value="${subtema.nombre_subtema}">${subtema.nombre_subtema}</option>`);
+                });
+                subtemaSelect.append('<option value="otro">Otro*seleccione para capturar nombre subtema</option>');
+            },
+            error: function () {
+                alert('Error al cargar subtemas.');
+            }
+        });
+    }
 
-        if (lines[clickedLine]) {
-            document.getElementById('subtema').value = lines[clickedLine];
-            textareasubt.style.display = "none";
-            labelsubtemasugerencia.style.display = "none";
-        }
+    // Manejar cambio de tema
+    $('#tema').change(function () {
+        const temaId = $(this).val();
+        cargarSubtemas(temaId);
     });
 
+    // Mostrar campo de texto si seleccionan "Otro..."
+    $('#subtema').change(function () {
+        if ($(this).val() === 'otro') {
+            $('#nuevoSubtemaContainer').show();
+        } else {
+            $('#nuevoSubtemaContainer').hide();
+            $('#nuevoSubtema').val(''); // Limpiar campo
+        }
+    });
  
     $('#verificarBtn').click(function () {
         const nombre = $('#nombre').val();

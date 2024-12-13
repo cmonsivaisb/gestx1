@@ -38,77 +38,88 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
         exit();
     }
 
-    // Obtener ID del responsable
-    $responsableNombre = trim($_POST['responsable'] ?? 'otro');
-    if (empty($responsableNombre)) {
-        echo json_encode(['success' => false, 'error' => 'El campo "responsable" es obligatorio.']);
-        exit();
-    }
+   
 
-    try {
-        $query = "SELECT id_responsable FROM responsables WHERE nombre_responsable = :nombre LIMIT 1";
-        $stmt = $pdo->prepare($query);
-        $stmt->bindParam(':nombre', $responsableNombre, PDO::PARAM_STR);
-        $stmt->execute();
-        $responsable = $stmt->fetch(PDO::FETCH_ASSOC);
-
-        if ($responsable) {
-            $id_responsable = $responsable['id_responsable'];
-        } else {
-            echo json_encode(['success' => false, 'error' => 'No se encontró un responsable con el nombre proporcionado.']);
+    
+        // Obtener o insertar responsable
+        $responsableNombre = trim($_POST['responsable'] ?? 'otro');
+        if (empty($responsableNombre)) {
+            echo json_encode(['success' => false, 'error' => 'El campo "responsable" es obligatorio.']);
             exit();
         }
-    } catch (Exception $e) {
-        echo json_encode(['success' => false, 'error' => 'Error al procesar el responsable: ' . $e->getMessage()]);
-        exit();
-    }
-
-    // Obtener ID del subtema
-    $subtemaNombre = trim($_POST['subtema'] ?? 'otro');
-    if (empty($subtemaNombre)) {
-        echo json_encode(['success' => false, 'error' => 'El campo "subtema" es obligatorio.']);
-        exit();
-    }
-
-    try {
-        $query = "SELECT id FROM subtemas WHERE nombre_subtema = :nombre LIMIT 1";
-        $stmt = $pdo->prepare($query);
-        $stmt->bindParam(':nombre', $subtemaNombre, PDO::PARAM_STR);
-        $stmt->execute();
-        $subtema = $stmt->fetch(PDO::FETCH_ASSOC);
-
-        if ($subtema) {
-            $id_subtema = $subtema['id'];
-        } else {
-            echo json_encode(['success' => false, 'error' => 'No se encontró un subtema con el nombre proporcionado.']);
+    
+        try {
+            $query = "SELECT id_responsable FROM responsables WHERE nombre_responsable = :nombre LIMIT 1";
+            $stmt = $pdo->prepare($query);
+            $stmt->bindParam(':nombre', $responsableNombre, PDO::PARAM_STR);
+            $stmt->execute();
+            $responsable = $stmt->fetch(PDO::FETCH_ASSOC);
+    
+            if ($responsable) {
+                $id_responsable = $responsable['id_responsable'];
+            } else {
+                // Insertar nuevo responsable
+                $query = "INSERT INTO responsables (nombre_responsable) VALUES (:nombre)";
+                $stmt = $pdo->prepare($query);
+                $stmt->bindParam(':nombre', $responsableNombre, PDO::PARAM_STR);
+                $stmt->execute();
+                $id_responsable = $pdo->lastInsertId();
+            }
+        } catch (Exception $e) {
+            echo json_encode(['success' => false, 'error' => 'Error al procesar el responsable: ' . $e->getMessage()]);
             exit();
         }
-    } catch (Exception $e) {
-        echo json_encode(['success' => false, 'error' => 'Error al procesar el subtema: ' . $e->getMessage()]);
-        exit();
+    
+        // Obtener o insertar subtema
+        $subtemaNombre = trim($_POST['subtema'] ?? 'otro');
+        if (empty($subtemaNombre)) {
+            echo json_encode(['success' => false, 'error' => 'El campo "subtema" es obligatorio.']);
+            exit();
+        }
+    
+        try {
+            $query = "SELECT id FROM subtemas WHERE nombre_subtema = :nombre LIMIT 1";
+            $stmt = $pdo->prepare($query);
+            $stmt->bindParam(':nombre', $subtemaNombre, PDO::PARAM_STR);
+            $stmt->execute();
+            $subtema = $stmt->fetch(PDO::FETCH_ASSOC);
+    
+            if ($subtema) {
+                $id_subtema = $subtema['id'];
+            } else {
+                // Insertar nuevo subtema
+                $query = "INSERT INTO subtemas (nombre_subtema) VALUES (:nombre)";
+                $stmt = $pdo->prepare($query);
+                $stmt->bindParam(':nombre', $subtemaNombre, PDO::PARAM_STR);
+                $stmt->execute();
+                $id_subtema = $pdo->lastInsertId();
+            }
+        } catch (Exception $e) {
+            echo json_encode(['success' => false, 'error' => 'Error al procesar el subtema: ' . $e->getMessage()]);
+            exit();
+        }
+    
+        // Insertar la gestión
+        try {
+            $stmt = $pdo->prepare("INSERT INTO gestiones (id_tema, detalle, origen, id_estado, id_municipio, id_colonia, num_exterior, celular, seccional, id_usuario, estatus, nombre, calle, id_subtema, id_responsable, fecha) 
+                                   VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)");
+            $stmt->execute([
+                $id_tema, $detalle, $origen, $id_estado, $id_municipio, $id_colonia, $num_exterior,
+                $celular, $seccional, $id_usuario, $status, $nombre, $calle, $id_subtema, $id_responsable, $fecha
+            ]);
+    
+            // Obtener el ID de la gestión recién insertada
+            $id_gestion = $pdo->lastInsertId();
+    
+            // Responder con éxito
+            echo json_encode([
+                'success' => true,
+                'message' => "Gestión guardada correctamente. El folio es: $id_gestion",
+                'id_gestion' => $id_gestion
+            ]);
+        } catch (PDOException $e) {
+            echo json_encode(['success' => false, 'error' => 'Error al guardar: favor de revisar que los campos estén llenados con los datos correctos. ' . $e->getMessage()]);
+            exit();
+        }
     }
-
-    // Insertar la gestión
-    try {
-        $stmt = $pdo->prepare("INSERT INTO gestiones (id_tema, detalle, origen, id_estado, id_municipio, id_colonia, num_exterior, celular, seccional, id_usuario, estatus, nombre, calle, id_subtema, id_responsable, fecha) 
-                               VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)");
-        $stmt->execute([
-            $id_tema, $detalle, $origen, $id_estado, $id_municipio, $id_colonia, $num_exterior,
-            $celular, $seccional, $id_usuario, $status, $nombre, $calle, $id_subtema, $id_responsable, $fecha
-        ]);
-
-        // Obtener el ID de la gestión recién insertada
-        $id_gestion = $pdo->lastInsertId();
-
-        // Responder con éxito
-        echo json_encode([
-            'success' => true,
-            'message' => "Gestión guardada correctamente. El folio es: $id_gestion",
-            'id_gestion' => $id_gestion
-        ]);
-    } catch (PDOException $e) {
-        echo json_encode(['success' => false, 'error' => 'Error al guardar: favor de revisar que los campos estén llenados con los datos correctos. ' . $e->getMessage()]);
-        exit();
-    }
-}
-?>
+    ?>

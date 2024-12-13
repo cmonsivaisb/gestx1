@@ -33,22 +33,25 @@ $nombre = $_POST['nombre'] ?? '';
 $estatus = $_POST['estatus'] ?? '';
 $responsable = $_POST['responsable'] ?? '';
 
+$fechaInicio = $_POST['fechaInicio'] ?? '';
+$fechaFin = $_POST['fechaFin'] ?? '';
 
 
 
 
 
 
-       $query = "SELECT g.id AS idgestion, g.origen,g.nombre ,g.num_exterior,g.calle,g.estatus,g.detalle,g.celular,g.fecha, t.nombre_tema , m.nombre_municipio, c.nombre_colonia,e.nombre_estado, r.nombre_responsable,s.nombre_subtema,g.seccional
-                        FROM gestiones g
-                        INNER JOIN temas t ON g.id_tema = t.id
-                        INNER JOIN subtemas s ON g.id_subtema = s.id
-                        INNER JOIN estados e ON g.id_estado = e.id
-                        INNER JOIN municipios m ON g.id_municipio = m.id
-                        INNER JOIN colonias c ON g.id_colonia = c.id
-                        INNER JOIN responsables r on g.id_responsable=r.id_responsable
-               WHERE 1=1";
 
+$query = "SELECT g.id AS idgestion, g.origen, g.nombre, g.num_exterior, g.calle, g.estatus, g.detalle, g.celular, g.fecha, 
+                     t.nombre_tema, m.nombre_municipio, c.nombre_colonia, e.nombre_estado, r.nombre_responsable, s.nombre_subtema, g.seccional
+              FROM gestiones g
+              INNER JOIN temas t ON g.id_tema = t.id
+              INNER JOIN subtemas s ON g.id_subtema = s.id
+              INNER JOIN estados e ON g.id_estado = e.id
+              INNER JOIN municipios m ON g.id_municipio = m.id
+              INNER JOIN colonias c ON g.id_colonia = c.id
+              INNER JOIN responsables r ON g.id_responsable = r.id_responsable
+              WHERE 1=1";
 
        $params = [];
 
@@ -108,14 +111,26 @@ $responsable = $_POST['responsable'] ?? '';
            $query .= " AND r.nombre_responsable LIKE ?";
            $params[] = "%$responsable%";
        }
-       
-$query .= " ORDER BY fecha  DESC";
-       $stmt = $pdo->prepare($query);
-       $stmt->execute($params);
-       $gestiones = $stmt->fetchAll(PDO::FETCH_ASSOC);
-       echo json_encode($gestiones);
-       exit();
-  
+
+    // Filtrar por rango de fechas
+    if ($fechaInicio && $fechaFin) {
+        $query .= " AND g.fecha BETWEEN ? AND ?";
+        $params[] = $fechaInicio;
+        $params[] = $fechaFin;
+    } elseif ($fechaInicio) {
+        $query .= " AND g.fecha >= ?";
+        $params[] = $fechaInicio;
+    } elseif ($fechaFin) {
+        $query .= " AND g.fecha <= ?";
+        $params[] = $fechaFin;
+    }
+
+    $query .= " ORDER BY g.fecha DESC";
+    $stmt = $pdo->prepare($query);
+    $stmt->execute($params);
+    $gestiones = $stmt->fetchAll(PDO::FETCH_ASSOC);
+    echo json_encode($gestiones);
+    exit();
 }
 
 
@@ -134,6 +149,21 @@ $query .= " ORDER BY fecha  DESC";
         body {
             font-family: 'Poppins', sans-serif;
         }
+        .table-responsive {
+    max-height: 500px; /* Ajusta el alto máximo según tus necesidades */
+    overflow-x: auto; /* Permite el desplazamiento horizontal */
+    overflow-y: auto; /* Permite el desplazamiento vertical */
+    border: 1px solid #ddd; /* Opcional: Borde para resaltar la tabla */
+    position: relative; /* Necesario para el sticky */
+}
+
+.table thead th {
+    position: sticky; /* Hace que los encabezados se mantengan visibles */
+    top: 0; /* Fija al borde superior del contenedor */
+    z-index: 1020; /* Asegura que los encabezados estén sobre el contenido */
+    background-color: #f8f9fa; /* Color de fondo para el encabezado */
+    box-shadow: 0px 2px 5px rgba(0, 0, 0, 0.1); /* Sombra para el encabezado */
+}
 
         /* Sidebar general */
         .sidebar {
@@ -304,13 +334,28 @@ $query .= " ORDER BY fecha  DESC";
                     <label for="responsable" class="form-label">Responsable</label>
                     <input type="text" class="form-control" id="responsable" name="responsable">
                 </div>
+                
                
             
             </div>
+                
+            <div class="row mb-3">
+    <div class="col-md-4">
+        <label for="fechaInicio" class="form-label">Fecha Inicio</label>
+        <input type="date" class="form-control" id="fechaInicio" name="fechaInicio">
+    </div>
+    <div class="col-md-4">
+        <label for="fechaFin" class="form-label">Fecha Fin</label>
+        <input type="date" class="form-control" id="fechaFin" name="fechaFin">
+    </div>
+</div>
+
             <div class="text-end">
                
                         <button type="button" id="exportarExcelBtn" class="btn btn-success">Exportar a Excel</button>
-                         <button type="button" id="buscarBtn" class="btn btn-primary">Buscar</button>
+                        <a href="https://gestiones.parras.gob.mx/2024/bireporte.php" class="btn btn-info">Ir a Reportes graficos</a>
+
+                        <button type="button" id="buscarBtn" class="btn btn-primary">Buscar</button>
             </div>
         </form>
     </div>
@@ -356,44 +401,50 @@ $query .= " ORDER BY fecha  DESC";
         // Búsqueda AJAX
         $('#buscarBtn').on('click', function() {
             var formData = $('#filtroForm').serialize();
-            formData += '&action=buscar';
+            const fullData = formData + '&action=buscar';
 
-            $.ajax({
-                type: 'POST',
-                url: 'dashboard.php',
-                data: formData,
-                dataType: 'json',
-                success: function(response) {
-                    var resultadosHtml = '';
-                    resultados = response; // Guardar los resultados para la exportación a Excel
+           
+        $.ajax({
+            type: 'POST',
+            url: 'dashboard.php',
+            data: fullData,
+            dataType: 'json',
+            success: function (response) {
+                let resultadosHtml = '';
+                resultados = response;
 
-                    if (response.length > 0) {
-                        $.each(response, function(key, value) {
-                            resultadosHtml += '<tr>' +
-                            '<td>' + value.nombre + '</td>' +
-                             '<td>' + value.fecha + '</td>' +
-                                '<td>' + value.nombre_tema + '</td>' +
-                                '<td>' + value.nombre_subtema + '</td>' +
-                                '<td>' + value.nombre_responsable + '</td>' +
-                                '<td>' + value.origen + '</td>' +
-                                '<td>' + value.nombre_estado + '</td>' +
-                                '<td>' + value.nombre_municipio + '</td>' +
-                                '<td>' + value.nombre_colonia + '</td>' +
-                                '<td>' + value.seccional + '</td>' +
-                                '<td>' + value.num_exterior + '</td>' +     
-                            '<td>' + value.calle + '</td>' +
-                                '<td>' + value.celular + '</td>' +
-                                '<td>' + value.estatus + '</td>' +
-                                '<td>' + value.detalle + '</td>' +
-                            '</tr>';
-                        });
-                    } else {
-                        resultadosHtml = '<tr><td colspan="12" class="text-center">No se encontraron resultados</td></tr>';
-                    }
-                    $('#resultadosBusqueda').html(resultadosHtml);
+                if (response.length > 0) {
+                    response.forEach(function (value) {
+                        resultadosHtml += `<tr>
+                            <td>${value.nombre}</td>
+                            <td>${value.fecha}</td>
+                            <td>${value.nombre_tema}</td>
+                            <td>${value.nombre_subtema}</td>
+                            <td>${value.nombre_responsable}</td>
+                            <td>${value.origen}</td>
+                            <td>${value.nombre_estado}</td>
+                            <td>${value.nombre_municipio}</td>
+                            <td>${value.nombre_colonia}</td>
+                            <td>${value.seccional}</td>
+                            <td>${value.num_exterior}</td>
+                            <td>${value.calle}</td>
+                            <td>${value.celular}</td>
+                            <td>${value.estatus}</td>
+                            <td>${value.detalle}</td>
+                        </tr>`;
+                    });
+                } else {
+                    resultadosHtml = '<tr><td colspan="15" class="text-center">No se encontraron resultados</td></tr>';
                 }
-            });
+
+                $('#resultadosBusqueda').html(resultadosHtml);
+            },
+            error: function () {
+                alert('Ocurrió un error al buscar.');
+            }
         });
+    });
+
 
   
           // Exportar a Excel con los resultados actuales
